@@ -23,36 +23,39 @@ type ServerSelector (listener : TcpListener) =
             if ss.Length = 0 then
                 { desc = "(server not loaded)"; numPlayers = "0"; numSlots = "0" }
             else if ss.Length = 1 then
-                servers.Head.Details
+                ss.Head.Details
             else 
                 { desc = "multihome server. click connect!"; numPlayers = "?"; numSlots = "?" }
 
+        let postToServer (uah : string) (cli : TcpClient) = async {
+            let ss = servers
+
+            if ss.Length = 0 then
+                do! McSocket(cli).Kick("no servers loaded")
+            else if ss.Length = 1 then
+                // TODO: check details!
+                ss.Head.Comms.Post cli
+            else
+                // TODO: multiserver support
+                do! McSocket(cli).Kick("TODO: vhost support")
+        }
         
 
-        let clifun (cli : TcpClient) _ = async {
-            // don't wait more than 10 seconds between message parts
-            cli.ReceiveTimeout <- 10000
+        let clifun (cli : TcpClient) = async {
 
             let mcs = McSocket(cli);
-            //cli.Client.LocalEndPoint.
+
             // await 0x02 handshake packet/0xfe server query packet from client
-            //printfn "await 0x02/0xfe"
             let! x = mcs.rid()
             
-            //printfn "got something alright"
-
             if x = 0x02 then
                 let! userAndHost = mcs.rstring ()
-
+                return! postToServer userAndHost cli
             else if x = 0xFE then
                 let qd = guessQueryDetails cli.Client.RemoteEndPoint
                 return! mcs.Kick(qd.desc + "§" + qd.numPlayers + "§" + qd.numSlots)
             else 
                 return! mcs.Kick("bad handshake: expected 0x02 or 0xFE")
-
-
-            // restore default infinite receive timeout
-            cli.ReceiveTimeout <- -1
         }
         
 

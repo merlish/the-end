@@ -17,9 +17,11 @@ type ServerComms (serverName : string) =
             let m = McSocket(cli)
             let rep = cli.Client.RemoteEndPoint
 
+            let fail reason =
+                printfn "kicking client %O: %s" rep reason
+                m.Kick reason
 
-
-            // secondly, respond to the handshake.
+            // firstly, respond to the handshake.
             // TODO: auth!
             do! m.wid 0x02
             do! m.wstring "-" // i.e. no auth
@@ -28,15 +30,13 @@ type ServerComms (serverName : string) =
             let! id = m.rid()
 
             if id <> 0x01 then
-                printfn "stupid client %O sent packet %x not 0x01 during login. kicked" rep id
-                return! m.Kick "expected 0x01 login request"
-
+                return! fail "expected 0x01 login request"
 
             // otherwise, let's read the data from the packet!
             let! protocolVersion = m.rsi()
 
             if protocolVersion <> serverProtocolVersion then
-                printfn "stupid client %O is on version %i, not %i" rep protocolVersion serverProtocolVersion
+                return! fail (sprintf "expected protocol version %i, not %i" serverProtocolVersion protocolVersion)
 
             let! username = m.rstring()
             let! _ = m.rsl()
@@ -47,8 +47,22 @@ type ServerComms (serverName : string) =
             let! _ = m.rub()
             let! _ = m.rub()
 
-            
+            if username.Length > 16 then
+                return! fail "username too long"
 
+            // ok, so far, so good.
+            // let's accept the login request!
+            do! m.wid 0x01 // packet id
+            // TODO: send actual Entity id
+            do! m.wsi 1298 // entity id of player
+            do! m.wstring "" // unused
+            do! m.wsl 12345 // server's map seed
+            do! m.wstring "default" // default or SUPERFLAT: level-type in server.properties
+            do! m.wsi 0 // server mode: 0, survival (1 for creative)
+            do! m.wsb 0 // dimension: -1: nether, 0: overworld, 1: the end
+            do! m.wsb 1 // difficulty: 0=peaceful, 1=easy, 2=normal, 3=hard
+            do! m.wsb 0 // probably deprecated world height param
+            do! m.wub 50 // max players; used by client to draw player list
         }
 
         let holder = TcpClientHolder(clifun, "PlayerComms[" + serverName + "]")

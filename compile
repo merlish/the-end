@@ -1,0 +1,3 @@
+#!/bin/sh
+mono ~/FSharp-2.0.0.0/bin/Fsc.exe McSocket.fs TcpClientHolder.fs ServerComms.fs Server.fs ServerSelector.fs Program.fs
+
