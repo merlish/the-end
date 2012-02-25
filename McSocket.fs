@@ -1,6 +1,7 @@
 ﻿namespace the_end
 
 open System
+open System.IO
 open Microsoft.FSharp.Core.Operators
 open System.Net.Sockets
 
@@ -22,6 +23,9 @@ type McSocket (tc : TcpClient) =
     
     class
 
+        // write buffering stream. minecraft is fussy about how we send packets :(
+        let mutable ws = MemoryStream()
+
         // reverses a given byte array, and returns this new array
         let revBytes (bytes : byte[]) =
             if BitConverter.IsLittleEndian then
@@ -34,15 +38,19 @@ type McSocket (tc : TcpClient) =
             return Encoding.BigEndianUnicode.GetString bytes
         }
 
-        let writeBEChars (strong : string) = tc.GetStream().AsyncWrite (Encoding.BigEndianUnicode.GetBytes(strong))
+        //let writeBEChars (strong : string) = tc.GetStream().AsyncWrite (Encoding.BigEndianUnicode.GetBytes(strong))
+        let writeBEChars (strong : string) = ws.AsyncWrite (Encoding.BigEndianUnicode.GetBytes(strong))
 
         // reads the specified number of bytes, converting from network order to little-endian if system is little-endian
         let read (n : int) = async {
             let! (bytes : byte[]) = tc.GetStream().AsyncRead(n)
             return revBytes bytes
         }
+
         
-        let wr bs = tc.GetStream().AsyncWrite (revBytes bs)
+        //let wr bs = tc.GetStream().AsyncWrite (revBytes bs)
+        let wr bs = ws.AsyncWrite (revBytes bs)
+
 
         let grah (a: int, b : int) = a + b
 
@@ -52,6 +60,12 @@ type McSocket (tc : TcpClient) =
         }
     
         
+        member this.readRaw (n : int) = async {
+            return! tc.GetStream().AsyncRead(n)
+        }
+        member this.writeRaw (bs) = async {
+            do! ws.AsyncWrite bs
+        }
 
         member this.rub () = readc 1 (fun (bs, _) -> bs.[0])
         member this.rsb () = readc 1 (fun (bs, _) -> (sbyte bs.[0]))
@@ -66,6 +80,15 @@ type McSocket (tc : TcpClient) =
         member this.rid () = async {
             let! idb = this.rub()
             return (int idb)
+        }
+
+        member this.rbool () = async {
+            let! x = this.rub()
+
+            if x = (byte 0) then
+                return false
+            else
+                return true
         }
         
         member this.rstring () = async {
@@ -90,6 +113,7 @@ type McSocket (tc : TcpClient) =
         member this.wsl (l : int64) = wr (BitConverter.GetBytes(l))
         member this.wsingle (si : float32) = wr (BitConverter.GetBytes(si))
         member this.wdouble (double : float) = wr (BitConverter.GetBytes(double))
+        member this.wbool (x : bool) = wr [|byte (if x then 1 else 0)|]
 
         member this.wid (id : int) = wr [|(byte id)|]
 
@@ -98,10 +122,18 @@ type McSocket (tc : TcpClient) =
             do! writeBEChars (strong)
         }
 
+        // hack!
+        member this.wend () = async {
+            do! tc.GetStream().AsyncWrite(ws.ToArray())
+            ws <- MemoryStream()
+        }
+
+
 
         member this.Kick (msg : string) = async {
             do! this.wub (byte 0xFF)
             do! this.wstring msg
+            do! this.wend()
         }
 
 

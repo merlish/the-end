@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cubist", "Cubist.csproj", "{17565CBE-4131-4729-82A4-112D4C4799DE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{17565CBE-4131-4729-82A4-112D4C4799DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17565CBE-4131-4729-82A4-112D4C4799DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17565CBE-4131-4729-82A4-112D4C4799DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17565CBE-4131-4729-82A4-112D4C4799DE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Cubist.csproj
+	EndGlobalSection
+EndGlobal

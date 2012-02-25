@@ -7,7 +7,7 @@ open System.Net.Sockets
 type ServerComms (serverName : string) =
     class
         
-        let serverProtocolVersion = 27
+        let serverProtocolVersion = 28
 
         let clifun (cli : TcpClient) = async {
             
@@ -25,6 +25,7 @@ type ServerComms (serverName : string) =
             // TODO: auth!
             do! m.wid 0x02
             do! m.wstring "-" // i.e. no auth
+            do! m.wend()
 
             // await 0x01 login request from client
             let! id = m.rid()
@@ -39,7 +40,7 @@ type ServerComms (serverName : string) =
                 return! fail (sprintf "expected protocol version %i, not %i" serverProtocolVersion protocolVersion)
 
             let! username = m.rstring()
-            let! _ = m.rsl()
+            //let! _ = m.rsl()
             let! _ = m.rstring()
             let! _ = m.rsi()
             let! _ = m.rsb()
@@ -56,13 +57,20 @@ type ServerComms (serverName : string) =
             // TODO: send actual Entity id
             do! m.wsi 1298 // entity id of player
             do! m.wstring "" // unused
-            do! m.wsl 12345 // server's map seed
+            //do! m.wsl (int64 12345) // server's map seed
             do! m.wstring "default" // default or SUPERFLAT: level-type in server.properties
             do! m.wsi 0 // server mode: 0, survival (1 for creative)
-            do! m.wsb 0 // dimension: -1: nether, 0: overworld, 1: the end
-            do! m.wsb 1 // difficulty: 0=peaceful, 1=easy, 2=normal, 3=hard
-            do! m.wsb 0 // probably deprecated world height param
-            do! m.wub 50 // max players; used by client to draw player list
+            do! m.wsi 0 // ???
+            do! m.wub (byte 1)
+            do! m.wub (byte 0) // ???
+            //do! m.wsb (sbyte 0) // dimension: -1: nether, 0: overworld, 1: the end (????)
+            //do! m.wsb (sbyte 1) // difficulty: 0=peaceful, 1=easy, 2=normal, 3=hard (?????)
+            //do! m.wsb (sbyte 0) // probably deprecated world height param (?????)
+            do! m.wub (byte 50) // max players; used by client to draw player list
+            do! m.wend()
+
+            printfn "accepted login request.. doing tempkickstart\n"
+            do! TempKickstart(cli,m).do_it()
         }
 
         let holder = TcpClientHolder(clifun, "PlayerComms[" + serverName + "]")

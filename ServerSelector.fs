@@ -9,7 +9,7 @@ type ServerSelector (listener : TcpListener) =
 
     class
 
-        let mutable (servers : Server list) = []
+        let mutable (servers : Server list) = [Server("oh noes")]
 
         let guessQueryDetails (clientEP : EndPoint) =
             // minecraft only sends vhost-friendly 'who am i connecting to' details on actual connection,
@@ -29,15 +29,16 @@ type ServerSelector (listener : TcpListener) =
 
         let postToServer (uah : string) (cli : TcpClient) = async {
             let ss = servers
+            let m = McSocket(cli)
 
             if ss.Length = 0 then
-                do! McSocket(cli).Kick("no servers loaded")
+                do! m.Kick("no servers loaded")
             else if ss.Length = 1 then
                 // TODO: check details!
                 ss.Head.Comms.Post cli
             else
                 // TODO: multiserver support
-                do! McSocket(cli).Kick("TODO: vhost support")
+                do! m.Kick("TODO: vhost support")
         }
         
 
@@ -50,9 +51,11 @@ type ServerSelector (listener : TcpListener) =
             
             if x = 0x02 then
                 let! userAndHost = mcs.rstring ()
+                printfn "here half way down 0x02"
                 return! postToServer userAndHost cli
             else if x = 0xFE then
                 let qd = guessQueryDetails cli.Client.RemoteEndPoint
+                printfn "here half way down 0xfe"
                 return! mcs.Kick(qd.desc + "§" + qd.numPlayers + "§" + qd.numSlots)
             else 
                 return! mcs.Kick("bad handshake: expected 0x02 or 0xFE")

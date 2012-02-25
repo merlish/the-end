@@ -10,6 +10,6 @@ type Server (name) =
         let comms = ServerComms(name)
 
         member this.Comms = comms
-        member this.Details : ServerQueryDetails = { desc = "?"; numPlayers = "12"; numSlots = "345" }
+        member this.Details : ServerQueryDetails = { desc = "todo"; numPlayers = "12"; numSlots = "345" }
 
     end
