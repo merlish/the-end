@@ -9,12 +9,12 @@ type SanitizedChatMessage = string
 
 type EntityID = int
 
-type BlockCoord = int * byte * int
+type BlockCoord = int * sbyte * int
 
-type WindowID = byte
+type WindowID = sbyte
 
 type SlotID = int16
-type Slot = byte[] // todo: more suitable type?
+type Slot = sbyte[] // todo: more suitable type?
 
 type TransactionID = int16
 

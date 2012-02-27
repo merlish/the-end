@@ -1,6 +1,5 @@
 ﻿namespace the_end
 
-open System
 open System.Net
 open System.Net.Sockets
 open System.Threading
@@ -47,10 +46,11 @@ type ServerSelector (listener : TcpListener) =
             let mcs = McSocket(cli);
 
             // await 0x02 handshake packet/0xfe server query packet from client
-            let! x = mcs.rid()
+            //let! x = mcs.rid()
+            let! x = mcs.ReadId()
             
             if x = 0x02 then
-                let! userAndHost = mcs.rstring ()
+                let! [String userAndHost] = mcs.Read [TString]
                 printfn "here half way down 0x02"
                 return! postToServer userAndHost cli
             else if x = 0xFE then

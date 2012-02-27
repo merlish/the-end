@@ -1,6 +1,5 @@
 namespace the_end
 
-open System
 open System.Net.Sockets
 open System.Threading
 
@@ -13,30 +12,28 @@ type TempKickstart (tc : TcpClient, m : McSocket) =
         // load=true: load chunk, load=false: unload chunk
         let write_prechunk (x,z,load) = async {
             printfn "prechunk (x:%d, z:%d) load: %b" x z load
-            printfn "wid:"
-            do! m.wid 0x32
-            printfn "wsi:"
-            do! m.wsi x
-            printfn "wsi:"
-            do! m.wsi z
-            printfn "wbool:"
-            do! m.wub (byte 1)
-            //do! m.wbool load
-            do! m.wend()
+            do! m.Write [Id 0x32; Int x; Int z; Bool true]
+            //do! m.wid 0x32
+            //do! m.wsi x
+            //do! m.wsi z
+            //do! m.wub (byte 1)
+            //do! m.wend()
         }
 
         let write_mapchunk (x,z,primarybitmap,compregion : byte array) = async {
             printfn "mapchunk (x:%d, z:%d) pb: %d  cr len: %d" x z primarybitmap compregion.Length
-            do! m.wid 0x33
-            do! m.wsi x // chunk x coord (*16 for block start coord)
-            do! m.wsi z // chunk z coord (*16 for block start coord)
-            do! m.wbool false // ground-up contiguous: always false
-            do! m.wss (int16 primarybitmap)
-            do! m.wss (int16 0) // add bitmap
-            do! m.wsi compregion.Length // compressed region data size
-            do! m.wsi 0 // ?
-            do! m.writeRaw compregion // compressed region data
-            do! m.wend()
+            do! m.Write [Id 0x33; Int x; Int z; Bool false; Short (int16 primarybitmap);
+                            Short (int16 0); Int compregion.Length; Int 0; RawBytes compregion]
+            //do! m.wid 0x33
+            //do! m.wsi x // chunk x coord (*16 for block start coord)
+            //do! m.wsi z // chunk z coord (*16 for block start coord)
+            //do! m.wbool false // ground-up contiguous: always false
+            //do! m.wss (int16 primarybitmap)
+            //do! m.wss (int16 0) // add bitmap
+            //do! m.wsi compregion.Length // compressed region data size
+            //do! m.wsi 0 // ?
+            //do! m.writeRaw compregion // compressed region data
+            //do! m.wend()
         }
 
         let gen_test_region () =
@@ -73,22 +70,25 @@ type TempKickstart (tc : TcpClient, m : McSocket) =
                     do! write_mapchunk(x,z,65535,comp_r)
 
             printfn "set spawn position.."
-            do! m.wid 0x06
-            do! m.wsi 0
-            do! m.wsi 70
-            do! m.wsi 0
-            do! m.wend()
+            do! m.Write [Id 0x06; Int 0; Int 70; Int 0]
+            //do! m.wid 0x06
+            //do! m.wsi 0
+            //do! m.wsi 70
+            //do! m.wsi 0
+            //do! m.wend()
 
             printfn "0x0d..."
-            do! m.wid 0x0d
-            do! m.wdouble 0.0 // x
-            do! m.wdouble 70.0 // stance
-            do! m.wdouble 70.0 // y
-            do! m.wdouble 0.0 // z
-            do! m.wsingle 0.0f // yaw
-            do! m.wsingle 0.0f // pitch
-            do! m.wbool true // on ground?
-            do! m.wend()
+            do! m.Write [Id 0x0d; Double 0.0; Double 70.0; Double 70.0; Double 0.0;
+                            Single 0.0f; Single 0.0f; Bool true]
+            //do! m.wid 0x0d
+            //do! m.wdouble 0.0 // x
+            //do! m.wdouble 70.0 // stance
+            //do! m.wdouble 70.0 // y
+            //do! m.wdouble 0.0 // z
+            //do! m.wsingle 0.0f // yaw
+            //do! m.wsingle 0.0f // pitch
+            //do! m.wbool true // on ground?
+            //do! m.wend()
 
             printfn "done."
         }
