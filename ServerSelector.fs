@@ -8,7 +8,7 @@ type ServerSelector (listener : TcpListener) =
 
     class
 
-        let mutable (servers : Server list) = [Server("oh noes")]
+        let mutable (servers : Server list) = [Server("batman")]
 
         let guessQueryDetails (clientEP : EndPoint) =
             // minecraft only sends vhost-friendly 'who am i connecting to' details on actual connection,
@@ -34,6 +34,7 @@ type ServerSelector (listener : TcpListener) =
                 do! m.Kick("no servers loaded")
             else if ss.Length = 1 then
                 // TODO: check details!
+                printfn "posting..."
                 ss.Head.Comms.Post cli
             else
                 // TODO: multiserver support

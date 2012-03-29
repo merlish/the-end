@@ -26,7 +26,13 @@ type ServerComms (serverName : string) =
             //do! m.wid 0x02
             //do! m.wstring "-" // i.e. no auth
             //do! m.wend()
+
+            printfn "ServerComms.fs: TODO: Use appropriate infrastructure for writing 0x02 response, not ad-hoc gunk"
+
             do! (m.Write [Id 0x02; String "-"])
+
+
+            printfn "ServerComms.fs: TODO: Update to use ClientPacketReader for reading login requests from clients"
 
             // await 0x01 login request from client
             let! id = m.ReadId()
@@ -41,7 +47,7 @@ type ServerComms (serverName : string) =
                 return! fail (sprintf "expected protocol version %i, not %i" serverProtocolVersion protocolVersion)
 
             let! [String username; _; _; _; _; _; _] = 
-                m.Read([TString; TString; TInt; TSByte; TSByte; TUByte; TUByte])
+                m.Read([TString; TString; TInt; TInt; TSByte; TUByte; TUByte])
 
             //let! username = m.rstring()
             //let! _ = m.rstring()
@@ -54,14 +60,20 @@ type ServerComms (serverName : string) =
             if username.Length > 16 then
                 return! fail "username too long"
 
+            do! Async.Sleep 2000
+
             // ok, so far, so good.
             // let's accept the login request!
             // packet id, entity id of player, unused, level type, server mode, 
             //  dimension, difficulty, (deprecated), 
             //   max players
+            printfn "ServerComms.fs: TODO: Use appropriate infrastructure for writing 0x01 response, not ad-hoc gunk"
+
             do! (m.Write [Id 0x01; Int 1298; String ""; String "default"; Int 0; 
-                            SByte (sbyte 0); SByte (sbyte 1); SByte (sbyte 0); 
+                            Int 0; SByte (sbyte 1); UByte (byte 255); //SByte (sbyte 0); 
                             UByte (byte 50)])
+
+            do! Async.Sleep 2000
 
             //do! m.wid 0x01 // packet id
             // TODO: send actual Entity id
@@ -82,7 +94,7 @@ type ServerComms (serverName : string) =
             do! TempKickstart(cli,m).do_it()
         }
 
-        let holder = TcpClientHolder(clifun, "PlayerComms[" + serverName + "]")
+        let holder = TcpClientHolder(clifun, "ServerComms[" + serverName + "]")
 
 
 

@@ -1,4 +1,12 @@
-
+Backup/
+Backup1/
+Cubist/obj/
+Cubist/Cubist.csproj.user
+UpgradeLog*.XML
+_UpgradeReport_Files/*
+the-end-packetcode/the-end-packetcode/bin/
+the-end-packetcode/the-end-packetcode/obj/
+*.suo
 .DS_Store
 *.swp
 *.exe

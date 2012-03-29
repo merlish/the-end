@@ -202,12 +202,18 @@ type McSocket (tc : TcpClient) =
             ws.Flush() // flush buffer (so actually write to stream)
         }
 
-        member this.Kick (msg : string) = this.Write [UByte (byte 0xff); String msg]
+        member this.Kick (msg : string) = async {
+            printfn "DEBUG: kicking! %s" msg
+            do! this.Write [UByte (byte 0xff); String msg]
+            tc.Close()
+        }
 
         member this.Available = tc.Available
         member this.Connected = tc.Connected
-        member this.Close () = tc.Close
+        member this.Close () = tc.Close()
 
-        override this.Finalize() = ws.Dispose()
+        override this.Finalize() = 
+            printfn "DEBUG: McSocket.fs: disposing ws in mcsocket finalizer"
+            //ws.Dispose()
 
     end

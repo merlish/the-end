@@ -12,7 +12,8 @@ type TempKickstart (tc : TcpClient, m : McSocket) =
         // load=true: load chunk, load=false: unload chunk
         let write_prechunk (x,z,load) = async {
             printfn "prechunk (x:%d, z:%d) load: %b" x z load
-            do! m.Write [Id 0x32; Int x; Int z; Bool true]
+            //do! m.Write [Id 0x32; Int x; Int z; Bool true]
+            do! m.Write [Id 0x32; Int x; Int z; SByte (sbyte 1)]
             //do! m.wid 0x32
             //do! m.wsi x
             //do! m.wsi z
@@ -49,13 +50,25 @@ type TempKickstart (tc : TcpClient, m : McSocket) =
                for i in 1..(16*16) -> biome // biome; 1 byte per XZ column
                |]
             
+        let write_tick t = m.Write [Id 0x04; Long t]
+
+        let mutable time = int64 0
+
+        let tick() = async {
+            do! Async.Sleep(50)
+            do! write_tick time
+            time <- time + int64 1
+        }
 
         let setup () = async {
 
-            Thread.Sleep(100)
+            printfn "set spawn position.."
+            do! m.Write [Id 0x06; Int 0; Int 70; Int 0]
 
             // send initial chunks
-            let dat_chunk_list = { -1..1 }
+            //let dat_chunk_list = { -7..7 }
+            let dat_chunk_list = [0]
+            //let dat_chunk_list = [ -1..7 ]
 
             // -- prechunk:
             for z in dat_chunk_list do // z coord
@@ -69,8 +82,6 @@ type TempKickstart (tc : TcpClient, m : McSocket) =
                 for x in dat_chunk_list do
                     do! write_mapchunk(x,z,65535,comp_r)
 
-            printfn "set spawn position.."
-            do! m.Write [Id 0x06; Int 0; Int 70; Int 0]
             //do! m.wid 0x06
             //do! m.wsi 0
             //do! m.wsi 70
@@ -93,9 +104,29 @@ type TempKickstart (tc : TcpClient, m : McSocket) =
             printfn "done."
         }
 
+        let keep_reading() = async {
+            let cpr = ClientPacketReader(m)
+            
+            while true do
+                let! p = cpr.Read()
+                printfn "%O" p
+        }
+
+        let dispatchread () = async {
+            printfn "starting keep_reading"
+            Async.Start(keep_reading())
+            printfn "started!"
+        }
+
+
         member this.do_it () = async {
 
             do! setup()
+            do! dispatchread()
+
+
+            while true do
+                do! tick()
 
         }
 

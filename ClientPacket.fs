@@ -198,6 +198,8 @@ type ClientPacketReader (m : McSocket) =
                 | _    -> return Invalid id
         }
 
+        member this.Read() = readClientPacket()
+
     end
 
         
